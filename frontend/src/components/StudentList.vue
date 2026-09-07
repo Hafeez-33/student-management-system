@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { getStudents } from '../api/students'
 import StatusFilter from './StatusFilter.vue'
 import Pagination from './Pagination.vue'
+import StudentForm from './StudentForm.vue'
 
 const students = ref([])
 const loading = ref(false)
@@ -12,6 +13,8 @@ const selectedStatus = ref('')
 const perPage = ref(10)
 const total = ref(0)
 const totalPages = ref(0)
+const showForm = ref(false)
+const editingStudent = ref(null)
 
 async function loadStudents() {
   loading.value = true
@@ -50,6 +53,26 @@ function onPageChange(page) {
   loadStudents()
 }
 
+function openCreate() {
+  editingStudent.value = null
+  showForm.value = true
+}
+
+function openEdit(student) {
+  editingStudent.value = { ...student }
+  showForm.value = true
+}
+
+function closeForm() {
+  showForm.value = false
+  editingStudent.value = null
+}
+
+async function onSaved() {
+  closeForm()
+  await loadStudents()
+}
+
 function fullName(student) {
   return `${student.first_name} ${student.last_name}`
 }
@@ -59,52 +82,62 @@ onMounted(loadStudents)
 
 <template>
   <section class="list">
-    <div class="toolbar">
-      <StatusFilter :model-value="selectedStatus" @update:model-value="onStatusChange" />
-    </div>
-
-    <div v-if="loading" class="status">Loading students...</div>
-
-    <div v-else-if="error" class="status status-error" role="alert">
-      <p>{{ error }}</p>
-      <button type="button" class="retry" @click="loadStudents">Retry</button>
-    </div>
-
-    <div v-else-if="students.length === 0" class="status">No students found.</div>
+    <StudentForm
+      v-if="showForm"
+      :key="editingStudent ? editingStudent.id : 'create'"
+      :student="editingStudent"
+      @saved="onSaved"
+      @cancel="closeForm"
+    />
 
     <template v-else>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Date of Birth</th>
-            <th>Enrollment Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="student in students" :key="student.id">
-            <td>{{ fullName(student) }}</td>
-            <td>{{ student.email }}</td>
-            <td>{{ student.date_of_birth }}</td>
-            <td class="status-cell">{{ student.enrollment_status }}</td>
-            <td class="actions">
-              <span class="placeholder">Edit</span>
-              <span class="placeholder">Delete</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </template>
+      <div class="toolbar">
+        <StatusFilter :model-value="selectedStatus" @update:model-value="onStatusChange" />
+        <button type="button" class="add" @click="openCreate">Add Student</button>
+      </div>
 
-    <Pagination
-      v-if="!loading && !error"
-      :page="currentPage"
-      :pages="totalPages"
-      :total="total"
-      @change="onPageChange"
-    />
+      <div v-if="loading" class="status">Loading students...</div>
+
+      <div v-else-if="error" class="status status-error" role="alert">
+        <p>{{ error }}</p>
+        <button type="button" class="retry" @click="loadStudents">Retry</button>
+      </div>
+
+      <div v-else-if="students.length === 0" class="status">No students found.</div>
+
+      <template v-else>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Date of Birth</th>
+              <th>Enrollment Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="student in students" :key="student.id">
+              <td>{{ fullName(student) }}</td>
+              <td>{{ student.email }}</td>
+              <td>{{ student.date_of_birth }}</td>
+              <td class="status-cell">{{ student.enrollment_status }}</td>
+              <td class="actions">
+                <button type="button" class="link" @click="openEdit(student)">Edit</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </template>
+
+      <Pagination
+        v-if="!loading && !error"
+        :page="currentPage"
+        :pages="totalPages"
+        :total="total"
+        @change="onPageChange"
+      />
+    </template>
   </section>
 </template>
 
@@ -114,7 +147,26 @@ onMounted(loadStudents)
 }
 
 .toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.add,
+.retry,
+.link {
+  cursor: pointer;
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #155eef;
+  text-decoration: underline;
+  font-size: 0.9rem;
 }
 
 .status {
@@ -165,10 +217,5 @@ th {
 .actions {
   display: flex;
   gap: 0.75rem;
-  color: #888;
-}
-
-.placeholder {
-  font-size: 0.85rem;
 }
 </style>
