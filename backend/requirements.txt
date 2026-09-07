@@ -2,3 +2,4 @@ Flask
 Flask-SQLAlchemy
 Flask-CORS
 pytest
+gunicorn; sys_platform != "win32"

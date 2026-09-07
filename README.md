@@ -90,6 +90,48 @@ On Windows PowerShell, `npm` may fail if `npm.ps1` is blocked by execution polic
 
 Open the Vite URL printed in the terminal (usually `http://localhost:5173/`). If 5173 is already in use, Vite picks the next free port (for example 5174).
 
+## Optional Live Demo
+
+Deployment is optional. The assignment runs fully locally. If you host a live demo:
+
+Frontend (Vercel): `<add Vercel URL>`
+
+Backend (Render): `<add Render URL>`
+
+### Render (Flask API)
+
+Set the service **root directory** to `backend`.
+
+- **Build command:** `pip install -r requirements.txt`
+- **Start command:** `gunicorn run:app`
+
+Render sets `PORT`; Gunicorn binds `0.0.0.0:$PORT`.
+
+Optional environment variable:
+
+- `FRONTEND_ORIGIN` — your Vercel origin, e.g. `https://your-app.vercel.app`  
+  If unset, CORS stays open (same as local development).
+
+SQLite (`students.db`) is created on startup if missing. On Render’s ephemeral disk, data can reset when the instance restarts — fine for a short demo, not durable production storage.
+
+### Vercel (Vue + Vite)
+
+Set the project **root directory** to `frontend`.
+
+- **Framework:** Vite
+- **Build command:** `npm run build`
+- **Output directory:** `dist`
+
+Required environment variable (set in Vercel **before** building):
+
+```text
+VITE_API_BASE_URL=<deployed Render backend URL>
+```
+
+Example shape (do not copy a fake host): `https://your-service.onrender.com` with no trailing slash. Vite bakes this in at build time.
+
+No `vercel.json` is required for this Vite app.
+
 ### Tests
 
 ```powershell
