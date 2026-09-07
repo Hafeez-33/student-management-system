@@ -1,13 +1,12 @@
 <script setup>
-// Import proves the API service layer is wired and loadable
-import { getStudents } from './api/students'
+import StudentList from './components/StudentList.vue'
 </script>
 
 <template>
   <main class="app">
     <h1>Student Management System</h1>
-    <p>Vue frontend is running. Student UI will be added next.</p>
-    <p class="meta">API service loaded: {{ typeof getStudents === 'function' ? 'yes' : 'no' }}</p>
+    <p class="subtitle">Students</p>
+    <StudentList />
   </main>
 </template>
 
@@ -23,13 +22,13 @@ body {
 }
 
 .app {
-  max-width: 40rem;
-  margin: 3rem auto;
-  padding: 0 1rem;
+  max-width: 60rem;
+  margin: 2.5rem auto;
+  padding: 0 1rem 2rem;
 }
 
-.meta {
+.subtitle {
   color: #555;
-  font-size: 0.9rem;
+  margin-top: 0;
 }
 </style>
