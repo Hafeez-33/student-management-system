@@ -1,25 +1,53 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { getStudents } from '../api/students'
+import StatusFilter from './StatusFilter.vue'
+import Pagination from './Pagination.vue'
 
 const students = ref([])
 const loading = ref(false)
 const error = ref('')
+const currentPage = ref(1)
+const selectedStatus = ref('')
+const perPage = ref(10)
+const total = ref(0)
+const totalPages = ref(0)
 
 async function loadStudents() {
   loading.value = true
   error.value = ''
-  students.value = []
 
   try {
-    const response = await getStudents()
-    students.value = response.data.items || []
+    const response = await getStudents({
+      page: currentPage.value,
+      per_page: perPage.value,
+      enrollment_status: selectedStatus.value,
+    })
+    const data = response.data
+    students.value = data.items || []
+    currentPage.value = data.page
+    perPage.value = data.per_page
+    total.value = data.total
+    totalPages.value = data.pages
   } catch {
     error.value = 'Unable to load students. Please try again.'
     students.value = []
+    total.value = 0
+    totalPages.value = 0
   } finally {
     loading.value = false
   }
+}
+
+function onStatusChange(status) {
+  selectedStatus.value = status
+  currentPage.value = 1
+  loadStudents()
+}
+
+function onPageChange(page) {
+  currentPage.value = page
+  loadStudents()
 }
 
 function fullName(student) {
@@ -31,6 +59,10 @@ onMounted(loadStudents)
 
 <template>
   <section class="list">
+    <div class="toolbar">
+      <StatusFilter :model-value="selectedStatus" @update:model-value="onStatusChange" />
+    </div>
+
     <div v-if="loading" class="status">Loading students...</div>
 
     <div v-else-if="error" class="status status-error" role="alert">
@@ -40,35 +72,49 @@ onMounted(loadStudents)
 
     <div v-else-if="students.length === 0" class="status">No students found.</div>
 
-    <table v-else class="table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Date of Birth</th>
-          <th>Enrollment Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="student in students" :key="student.id">
-          <td>{{ fullName(student) }}</td>
-          <td>{{ student.email }}</td>
-          <td>{{ student.date_of_birth }}</td>
-          <td class="status-cell">{{ student.enrollment_status }}</td>
-          <td class="actions">
-            <span class="placeholder">Edit</span>
-            <span class="placeholder">Delete</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <template v-else>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Date of Birth</th>
+            <th>Enrollment Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="student in students" :key="student.id">
+            <td>{{ fullName(student) }}</td>
+            <td>{{ student.email }}</td>
+            <td>{{ student.date_of_birth }}</td>
+            <td class="status-cell">{{ student.enrollment_status }}</td>
+            <td class="actions">
+              <span class="placeholder">Edit</span>
+              <span class="placeholder">Delete</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </template>
+
+    <Pagination
+      v-if="!loading && !error"
+      :page="currentPage"
+      :pages="totalPages"
+      :total="total"
+      @change="onPageChange"
+    />
   </section>
 </template>
 
 <style scoped>
 .list {
   margin-top: 1.5rem;
+}
+
+.toolbar {
+  margin-bottom: 1rem;
 }
 
 .status {

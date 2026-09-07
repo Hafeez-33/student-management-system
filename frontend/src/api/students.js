@@ -8,7 +8,19 @@ const api = axios.create({
 })
 
 export function getStudents(params = {}) {
-  return api.get('/students', { params })
+  const query = {}
+
+  if (params.page != null && params.page !== '') {
+    query.page = params.page
+  }
+  if (params.per_page != null && params.per_page !== '') {
+    query.per_page = params.per_page
+  }
+  if (params.enrollment_status) {
+    query.enrollment_status = params.enrollment_status
+  }
+
+  return api.get('/students', { params: query })
 }
 
 export function getStudent(id) {
