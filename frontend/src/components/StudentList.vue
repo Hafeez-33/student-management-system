@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue'
-import { getStudents } from '../api/students'
+import { deleteStudent, getStudents } from '../api/students'
 import StatusFilter from './StatusFilter.vue'
 import Pagination from './Pagination.vue'
 import StudentForm from './StudentForm.vue'
@@ -15,10 +15,13 @@ const total = ref(0)
 const totalPages = ref(0)
 const showForm = ref(false)
 const editingStudent = ref(null)
+const deletingId = ref(null)
+const actionError = ref('')
 
 async function loadStudents() {
   loading.value = true
   error.value = ''
+  actionError.value = ''
 
   try {
     const response = await getStudents({
@@ -73,6 +76,40 @@ async function onSaved() {
   await loadStudents()
 }
 
+async function onDelete(student) {
+  if (deletingId.value) {
+    return
+  }
+
+  const confirmed = window.confirm(
+    `Are you sure you want to delete this student?`,
+  )
+  if (!confirmed) {
+    return
+  }
+
+  deletingId.value = student.id
+  actionError.value = ''
+
+  try {
+    const lastOnPage = students.value.length === 1
+    await deleteStudent(student.id)
+    if (lastOnPage && currentPage.value > 1) {
+      currentPage.value -= 1
+    }
+    await loadStudents()
+  } catch (err) {
+    const status = err.response && err.response.status
+    if (status === 404) {
+      actionError.value = 'Student no longer exists.'
+    } else {
+      actionError.value = 'Unable to delete student. Please try again.'
+    }
+  } finally {
+    deletingId.value = null
+  }
+}
+
 function fullName(student) {
   return `${student.first_name} ${student.last_name}`
 }
@@ -94,6 +131,10 @@ onMounted(loadStudents)
       <div class="toolbar">
         <StatusFilter :model-value="selectedStatus" @update:model-value="onStatusChange" />
         <button type="button" class="add" @click="openCreate">Add Student</button>
+      </div>
+
+      <div v-if="actionError" class="status status-error action-error" role="alert">
+        {{ actionError }}
       </div>
 
       <div v-if="loading" class="status">Loading students...</div>
@@ -124,6 +165,14 @@ onMounted(loadStudents)
               <td class="status-cell">{{ student.enrollment_status }}</td>
               <td class="actions">
                 <button type="button" class="link" @click="openEdit(student)">Edit</button>
+                <button
+                  type="button"
+                  class="link danger"
+                  :disabled="deletingId !== null"
+                  @click="onDelete(student)"
+                >
+                  {{ deletingId === student.id ? 'Deleting...' : 'Delete' }}
+                </button>
               </td>
             </tr>
           </tbody>
@@ -217,5 +266,19 @@ th {
 .actions {
   display: flex;
   gap: 0.75rem;
+  align-items: center;
+}
+
+.link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.danger {
+  color: #b42318;
+}
+
+.action-error {
+  margin-bottom: 1rem;
 }
 </style>
