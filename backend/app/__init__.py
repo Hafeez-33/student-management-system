@@ -13,6 +13,16 @@ def create_app(config_class=Config):
     # Allow the future Vue/Vite dev server to call this API locally
     cors.init_app(app)
 
+    # Import models so SQLAlchemy metadata is registered, then create tables
+    from app import models  # noqa: F401
+
+    with app.app_context():
+        db.create_all()
+
+    from app.routes import register_routes
+
+    register_routes(app)
+
     @app.get("/health")
     def health():
         return jsonify(status="ok"), 200
