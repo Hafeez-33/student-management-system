@@ -190,7 +190,6 @@ See [DESIGN.md](DESIGN.md) for the data model, API, components, and trade-offs.
 - No authentication or roles
 - SQLite only (fine for local demo; Postgres for shared deploy)
 - No frontend automated tests
-- Simple CSS, not a design system
 - PUT is a full replace of mutable fields (no PATCH)
 - Confirm-dialog delete rather than a custom modal
 
@@ -206,12 +205,10 @@ Development was done in **Cursor**, in explicit phases (setup → API → tests 
 
 ## Screenshots
 
-Capture these locally into `screenshots/` (same filenames) before the evaluated commit. They are not generated in CI.
-
 ![Student list with filter and pagination](screenshots/list-filtered.png)
 
 ![Create/edit form and successful create](screenshots/create-success.png)
 
 ![Validation error in the UI](screenshots/validation-error.png)
 
-![Loading, empty, or error state](screenshots/error-state.png)
+![Failed request handled in the list (backend unavailable)](screenshots/error-state.png)
